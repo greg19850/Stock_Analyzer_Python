@@ -2,8 +2,7 @@ from operator import index
 
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text, Enum
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from datetime import datetime
+from datetime import datetime, UTC
 import enum
 
 from app.db.database import Base
@@ -23,9 +22,8 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     # Relationships
     portfolios = relationship("Portfolio", back_populates="owner", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="user", cascade="all, delete-orphan")
@@ -44,8 +42,8 @@ class Portfolio(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships
     owner = relationship("User", back_populates="portfolios")
@@ -76,8 +74,8 @@ class Stock(Base):
     market_cap = Column(Float, nullable=True)
     pe_ratio = Column(Float, nullable=True)
 
-    last_updated = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_updated = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     # Relationships
     holdings = relationship("Holding", back_populates="stock")
@@ -103,11 +101,11 @@ class Holding(Base):
 
     quantity = Column(Float, nullable=False)
     average_purchase_price = Column(Float, nullable=False)
-    purchase_date = Column(DateTime(timezone=True), nullable=False)
+    purchase_date = Column(DateTime, nullable=False)
     notes = Column(Text, nullable=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships
     portfolio = relationship("Portfolio", back_populates="holdings")
@@ -164,10 +162,10 @@ class Alert(Base):
     threshold_value = Column(Float, nullable=False)
 
     is_active = Column(Boolean, default=True)
-    last_triggered = Column(DateTime(timezone=True), nullable=True)
+    last_triggered = Column(DateTime, nullable=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships
     user = relationship("User", back_populates="alerts")

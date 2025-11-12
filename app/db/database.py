@@ -1,23 +1,20 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.testing import future
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+
 
 from app.config import settings
 
-# Create async engine
+# Create sync engine
 # echo=True logs all SQL queries
-engine = create_async_engine(
+engine = create_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    future=True,
-    pool_pre_ping=True,
+    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
 )
 
 # Session factory - creates new database sessions
-AsyncSessionLocal = async_sessionmaker(
-    engine,
-    class_= AsyncSession,
-    expire_on_commit=False,
+SessionLocal = sessionmaker(
+    bind=engine,
     autocommit=False,
     autoflush=False,
 )
@@ -26,7 +23,7 @@ AsyncSessionLocal = async_sessionmaker(
 Base = declarative_base()
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> Session:
     """
     Dependency function that provides a database session.
 
@@ -38,12 +35,12 @@ async def get_db() -> AsyncSession:
         async def get_items(db: AsyncSession = Depends(get_db)):
             # Use db here
     """
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await  session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
