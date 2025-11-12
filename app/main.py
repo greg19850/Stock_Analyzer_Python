@@ -2,6 +2,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+from app.db.database import engine
+from app.api.v1 import api_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,10 +17,12 @@ async def lifespan(app: FastAPI):
     # Startup logic
     print(f"🚀 Starting {settings.PROJECT_NAME}")
 
+
     yield # Application runs here, handling requests
 
     # Shutdown logic
     print(f"👋 Shutting down {settings.PROJECT_NAME}")
+    await engine.dispose()
 
 
 app = FastAPI(
@@ -38,6 +43,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 async def root():
