@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.db import get_db, Portfolio as PortfolioModel
-from app.schemas import Portfolio, PortfolioCreate
+from app.schemas import Portfolio, PortfolioCreate, PortfolioUpdate
 
 router = APIRouter()
 
@@ -53,3 +53,41 @@ async def create_portfolio(
     db.commit()
     db.refresh(db_portfolio)
     return db_portfolio
+
+@router.patch("/{portfolio_id}", response_model=Portfolio)
+async def update_portfolio(
+        portfolio_update: PortfolioUpdate,
+        portfolio_id: int,
+        db: Session = Depends(get_db)
+):
+    portfolio = db.query(PortfolioModel).filter(PortfolioModel.id == portfolio_id).first()
+
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    # Get only the fields user wants to update
+    update_data = portfolio_update.model_dump(exclude_unset=True)
+
+    # Update the existing holding object
+    for field, value in update_data.items():
+        setattr(portfolio, field, value)
+
+    db.commit()
+    db.refresh(portfolio)
+
+    return portfolio
+
+@router.delete("/{portfolio_id}", status_code=204)
+async def delete_portfolio(
+    portfolio_id: int,
+    db: Session = Depends(get_db)
+):
+    portfolio = db.query(PortfolioModel).filter(PortfolioModel.id == portfolio_id).first()
+
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+
+    db.delete(portfolio)
+    db.commit()
+
+    return None
