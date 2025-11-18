@@ -22,7 +22,7 @@ async def get_holdings(
     - skip: number of records to skip (for pagination)
     - limit: max number of records to return
     """
-    portfolio = db.query(PortfolioModel).filter(PortfolioModel.id == portfolio_id).first()
+    portfolio = db.get(PortfolioModel, portfolio_id)
 
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -47,7 +47,8 @@ async def create_holding(
     - holding: The holding data (stock_id, quantity, price, etc.)
     """
 
-    portfolio = db.query(PortfolioModel).filter(PortfolioModel.id == portfolio_id).first()
+    portfolio = db.get(PortfolioModel, portfolio_id)
+
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
@@ -129,4 +130,3 @@ async def delete_holding(
     db.commit()
 
     return None
-
