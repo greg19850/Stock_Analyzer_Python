@@ -28,7 +28,7 @@ async def get_portfolio(
         db: Session = Depends(get_db)
 ):
     """Get a specific portfolio by ID"""
-    portfolio = db.query(PortfolioModel).filter(PortfolioModel.id == portfolio_id).first()
+    portfolio = db.get(PortfolioModel, portfolio_id)
 
 
     if not portfolio:
@@ -60,7 +60,7 @@ async def update_portfolio(
         portfolio_id: int,
         db: Session = Depends(get_db)
 ):
-    portfolio = db.query(PortfolioModel).filter(PortfolioModel.id == portfolio_id).first()
+    portfolio = db.get(PortfolioModel, portfolio_id)
 
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -82,7 +82,7 @@ async def delete_portfolio(
     portfolio_id: int,
     db: Session = Depends(get_db)
 ):
-    portfolio = db.query(PortfolioModel).filter(PortfolioModel.id == portfolio_id).first()
+    portfolio = db.get(PortfolioModel, portfolio_id)
 
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
