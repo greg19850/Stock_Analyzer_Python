@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 
-from app.db import get_db, Holding as HoldingModel, Portfolio as PortfolioModel
+from app.db import get_db, Holding as HoldingModel, Portfolio as PortfolioModel, Stock as StockModel
 from app.schemas import Holding, HoldingCreate, HoldingUpdate
 
 router = APIRouter()
@@ -52,9 +52,18 @@ async def create_holding(
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
+    stock = db.query(StockModel).filter(StockModel.symbol == holding.symbol).first()
+
+    if not stock:
+        raise HTTPException(status_code=404, detail=f"Stock with symbol {holding.symbol} not found")
+
     """ Create new holding """
     db_holding = HoldingModel(
-        **holding.model_dump(),
+        stock_id = stock.id,
+        quantity=holding.quantity,
+        average_purchase_price=holding.average_purchase_price,
+        purchase_date=holding.purchase_date,
+        notes=holding.notes,
         portfolio_id=portfolio_id
     )
     db.add(db_holding)
