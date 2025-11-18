@@ -12,13 +12,18 @@ class HoldingBase(BaseModel):
     notes: Optional[str] = None
 
 
-class HoldingCreate(HoldingBase):
+class HoldingCreate(BaseModel):
     """
     Schema for creating a holding.
 
     portfolio_id is in the URL path, not request body.
+    Users provide stock symbol, not stock_id.
     """
-    pass
+    symbol: str
+    quantity: float = Field(gt=0, description="Number of shares (must be positive)")
+    average_purchase_price: float = Field(gt=0, description="Average price per share")
+    purchase_date: datetime
+    notes: Optional[str] = None
 
 
 class HoldingUpdate(BaseModel):
