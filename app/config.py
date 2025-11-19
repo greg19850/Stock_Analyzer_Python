@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     REDIS_URL: str
 
     # Stock API
-    ALPHA_VANATGE_API_KEY: Optional[str] = None
+    ALPHA_VANTAGE_API_KEY: Optional[str] = None
 
     class Config:
         env_file = ".env"

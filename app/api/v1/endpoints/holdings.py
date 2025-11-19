@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
+from app.services.stock_service import fetch_stock_data
+from app.config import settings
 
 from app.db import get_db, Holding as HoldingModel, Portfolio as PortfolioModel, Stock as StockModel
 from app.schemas import Holding, HoldingCreate, HoldingUpdate
@@ -55,7 +57,21 @@ async def create_holding(
     stock = db.query(StockModel).filter(StockModel.symbol == holding.symbol).first()
 
     if not stock:
-        raise HTTPException(status_code=404, detail=f"Stock with symbol {holding.symbol} not found")
+        try:
+            stock_data = fetch_stock_data(holding.symbol, settings.ALPHA_VANTAGE_API_KEY)
+
+            db_stock = StockModel(
+                **stock_data
+            )
+
+            db.add(db_stock)
+            db.commit()
+            db.refresh(db_stock)
+            stock = db_stock
+        except ValueError:
+            raise HTTPException(status_code=404, detail=f"stock symbol '{holding.symbol}' not found")
+        except:
+            raise HTTPException(status_code=500, detail="Server Error, try again later")
 
     """ Create new holding """
     db_holding = HoldingModel(
