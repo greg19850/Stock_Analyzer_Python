@@ -24,9 +24,7 @@ class Settings(BaseSettings):
     # Stock API
     ALPHA_VANTAGE_API_KEY: Optional[str] = None
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {"env_file": ".env", "case_sensitive": True}
 
 # Create a single instance to use throughout the app
 settings = Settings()
