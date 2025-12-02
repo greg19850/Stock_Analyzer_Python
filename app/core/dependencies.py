@@ -19,7 +19,7 @@ async def get_current_user(
     Returns the user if valid, raises 401 if invalid.
     """
 
-    token = credentials.access_token
+    token = credentials.credentials
     email = decode_access_token(token)
 
     if not email:
