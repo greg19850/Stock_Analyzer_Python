@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.db import get_db, Portfolio as PortfolioModel
+from app.db import get_db
+from app.db.models import Portfolio as PortfolioModel, User as UserModel
 from app.schemas import Portfolio, PortfolioCreate, PortfolioUpdate
+from app.core.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -40,14 +42,15 @@ async def get_portfolio(
 @router.post("/", response_model=Portfolio, status_code=201)
 async def create_portfolio(
         portfolio: PortfolioCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
     """
     Create a new portfolio.
     """
     db_portfolio = PortfolioModel(
         **portfolio.model_dump(),
-        user_id=1  # Temporary - will use auth later
+        user_id = current_user.id
     )
     db.add(db_portfolio)
     db.commit()

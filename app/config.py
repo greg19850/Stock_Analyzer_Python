@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     # Stock API
     ALPHA_VANTAGE_API_KEY: Optional[str] = None
 
+    # JWT/Authentication
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     model_config = {"env_file": ".env", "case_sensitive": True}
 
 # Create a single instance to use throughout the app
