@@ -6,6 +6,7 @@ from app.db.models import User as UserModel
 from app.schemas.user import User, UserCreate
 from app.schemas.auth import UserLogin, Token
 from app.core.security import hash_password, verify_password, create_access_token
+from app.core.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -40,7 +41,7 @@ async def register(
 @router.post('/login', response_model=Token, status_code=200)
 async def login(
     login_data: UserLogin,
-    db: Session=Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """Login user"""
 
@@ -57,3 +58,14 @@ async def login(
         access_token = token,
         token_type="bearer"
     )
+
+@router.get('/profile', response_model=User)
+async def get_current_user_info(
+    current_user: UserModel = Depends(get_current_user),
+):
+    """
+    Get current authenticated user's profile.
+
+    Returns the user information for the currently logged-in user.
+    """
+    return current_user
