@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     model_config = {"env_file": ".env", "case_sensitive": True}
 
 # Create a single instance to use throughout the app
