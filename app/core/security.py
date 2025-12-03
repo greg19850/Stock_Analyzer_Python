@@ -7,6 +7,7 @@ from app.config import settings
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 def hash_password(password: str)-> str:
     """
@@ -86,3 +87,29 @@ def decode_access_token(token: str)-> Optional[str]:
         return email
     except JWTError:
         return None
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None)-> str:
+    """
+    Create a JWT refresh token
+
+    Args:
+        data (dict): Dictionary of data to encode in the token (usually {"sub": user_email})
+        expires_delta (Optional[timedelta], optional): Optional custom expiration time. Defaults to None.
+
+    Returns:
+        str: Encoded JWT refresh token as string
+    """
+    to_encode = data.copy()
+
+    # Set expiration time
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+
+    # Add expiration to toke data
+    to_encode.update({"exp": expire})
+
+    # Encode JWT token
+    token =jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return token

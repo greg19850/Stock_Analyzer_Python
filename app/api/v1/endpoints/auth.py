@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.db.models import User as UserModel
 from app.schemas.user import User, UserCreate
-from app.schemas.auth import UserLogin, Token
-from app.core.security import hash_password, verify_password, create_access_token
+from app.schemas.auth import UserLogin, Token, TokenRefresh
+from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_access_token
 from app.core.dependencies import get_current_user
 
 router = APIRouter()
@@ -31,10 +31,12 @@ async def register(
     db.commit()
     db.refresh(db_user)
 
-    token =  create_access_token(data={"sub": user.email})
+    access_token =  create_access_token(data={"sub": user.email})
+    refresh_token = create_refresh_token(data={"sub": user.email})
 
     return Token(
-        access_token = token,
+        access_token = access_token,
+        refresh_token=refresh_token,
         token_type="bearer"
     )
 
@@ -52,10 +54,12 @@ async def login(
     if not verify_password(login_data.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid Credentials")
 
-    token = create_access_token(data={"sub": db_user.email})
+    access_token =  create_access_token(data={"sub": db_user.email})
+    refresh_token = create_refresh_token(data={"sub": db_user.email})
 
     return Token(
-        access_token = token,
+        access_token = access_token,
+        refresh_token=refresh_token,
         token_type="bearer"
     )
 
@@ -69,3 +73,30 @@ async def get_current_user_info(
     Returns the user information for the currently logged-in user.
     """
     return current_user
+
+@router.post('/refresh', response_model=Token, status_code=200)
+async def refresh_token(
+    token_data: TokenRefresh,
+    db: Session = Depends(get_db)
+):
+    """Refresh access token using refresh token"""
+
+    email = decode_access_token(token_data.refresh_token)
+
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    # Verify user still exist
+    user = db.query(UserModel).filter(UserModel.email == email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    # Generate new tokens
+    new_access_token =  create_access_token(data={"sub": email})
+    new_refresh_token = create_refresh_token(data={"sub": email})
+
+    return Token(
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
+        token_type="bearer"
+    )
