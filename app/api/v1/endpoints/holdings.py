@@ -4,8 +4,10 @@ from typing import List
 from datetime import datetime
 from app.services.stock_service import fetch_stock_data
 from app.config import settings
+from app.core.dependencies import get_current_user
 
-from app.db import get_db, Holding as HoldingModel, Portfolio as PortfolioModel, Stock as StockModel
+from app.db import get_db
+from app.db.models import Holding as HoldingModel, Portfolio as PortfolioModel, Stock as StockModel, User as UserModel
 from app.schemas import Holding, HoldingCreate, HoldingUpdate
 
 router = APIRouter()
@@ -15,7 +17,8 @@ async def get_holdings(
         portfolio_id: int = Path(..., description="Portfolio ID"),
         skip: int = 0,
         limit: int = 100,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
     """
     Get all holdings.
@@ -24,7 +27,8 @@ async def get_holdings(
     - skip: number of records to skip (for pagination)
     - limit: max number of records to return
     """
-    portfolio = db.get(PortfolioModel, portfolio_id)
+    # portfolio = db.get(PortfolioModel, portfolio_id)
+    portfolio = db.query(PortfolioModel).filter(PortfolioModel.user_id == current_user.id, PortfolioModel.id == portfolio_id)
 
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -40,7 +44,8 @@ async def get_holdings(
 async def create_holding(
         holding: HoldingCreate,
         portfolio_id: int = Path(..., description="The portfolio ID"),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
     """
     Create a new holding in a specific portfolio.
@@ -49,7 +54,8 @@ async def create_holding(
     - holding: The holding data (stock_id, quantity, price, etc.)
     """
 
-    portfolio = db.get(PortfolioModel, portfolio_id)
+    # portfolio = db.get(PortfolioModel, portfolio_id)
+    portfolio = db.query(PortfolioModel).filter(PortfolioModel.user_id == current_user.id, PortfolioModel.id == portfolio_id)
 
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -91,7 +97,8 @@ async def create_holding(
 async def get_holding(
         portfolio_id: int = Path(..., description="The portfolio ID"),
         holding_id: int = Path(..., description="The holding ID"),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
     """
     Get a specific holding from a specific portfolio.
@@ -99,9 +106,10 @@ async def get_holding(
     - portfolio_id: The portfolio ID (from URL)
     - holding_id: The holding ID (from URL)
     """
-    holding = db.query(HoldingModel).filter(
+    holding = db.query(HoldingModel).join(PortfolioModel).filter(
         HoldingModel.id == holding_id,
-        HoldingModel.portfolio_id == portfolio_id
+        HoldingModel.portfolio_id == portfolio_id,
+        PortfolioModel.user_id == current_user.id
     ).first()
 
     if not holding:
@@ -141,11 +149,13 @@ async def update_holding(
 async def delete_holding(
         portfolio_id: int = Path(...),
         holding_id: int = Path(...),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
-    holding = db.query(HoldingModel).filter(
+    holding = db.query(HoldingModel).join(PortfolioModel).filter(
         HoldingModel.id == holding_id,
-        HoldingModel.portfolio_id == portfolio_id
+        HoldingModel.portfolio_id == portfolio_id,
+        PortfolioModel.user_id == current_user.id
     ).first()
 
     if not holding:

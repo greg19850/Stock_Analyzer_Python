@@ -13,24 +13,26 @@ router = APIRouter()
 async def get_portfolios(
         skip: int = 0,
         limit: int = 100,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
     """
     Get all portfolios.
 
     Test endpoint.
     """
-    portfolios = db.query(PortfolioModel).offset(skip).limit(limit).all()
+    portfolios = db.query(PortfolioModel).filter(PortfolioModel.user_id == current_user.id).offset(skip).limit(limit).all()
     return portfolios
 
 
 @router.get("/{portfolio_id}", response_model=Portfolio)
 async def get_portfolio(
         portfolio_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
     """Get a specific portfolio by ID"""
-    portfolio = db.get(PortfolioModel, portfolio_id)
+    portfolio = db.query(PortfolioModel).filter(PortfolioModel.user_id == current_user.id, PortfolioModel.id == portfolio_id).first()
 
 
     if not portfolio:
@@ -61,9 +63,10 @@ async def create_portfolio(
 async def update_portfolio(
         portfolio_update: PortfolioUpdate,
         portfolio_id: int,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user)
 ):
-    portfolio = db.get(PortfolioModel, portfolio_id)
+    portfolio = db.query(PortfolioModel).filter(PortfolioModel.user_id == current_user.id, PortfolioModel.id == portfolio_id).first()
 
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
@@ -83,9 +86,10 @@ async def update_portfolio(
 @router.delete("/{portfolio_id}", status_code=204)
 async def delete_portfolio(
     portfolio_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
 ):
-    portfolio = db.get(PortfolioModel, portfolio_id)
+    portfolio = db.query(PortfolioModel).filter(PortfolioModel.user_id == current_user.id, PortfolioModel.id == portfolio_id).first()
 
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
