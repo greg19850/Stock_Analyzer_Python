@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:18-alpine
-    container_name: investment_postgres
+    container_name: invest_db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -18,7 +18,7 @@ services:
 
   redis:
     image: redis:8-alpine
-    container_name: investment_redis
+    container_name: invest_redis
     ports:
       - "6379:6379"
     volumes:
@@ -30,7 +30,7 @@ services:
       retries: 5
 
   web:
-    container_name: investment_web
+    container_name: invest_web
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
@@ -42,6 +42,30 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - .env
+
+  celery_worker:
+    container_name: invest_celery
+    build: .
+    command: celery -A app.celery_app worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - postgres
+    env_file:
+      - .env
+
+  celery_beat:
+    container_name: invest_celery_beat
+    build: .
+    command: celery -A app.celery_app beat --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - postgres
     env_file:
       - .env
 
