@@ -2,7 +2,7 @@ from app.celery_app import celery_app
 import time
 
 @celery_app.task
-def test_mask(name: str):
+def test_task(name: str):
     """Test task to verify Celery is working"""
     time.sleep(5) # Simulate some work
     return f"Hello {name}, task completed."
